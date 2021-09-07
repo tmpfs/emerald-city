@@ -24,11 +24,18 @@
         flex-direction: column;
         margin-top: 2em;
       }
+
+      button {
+        margin-top: 2em;
+      }
     </style>
   </head>
   <body>
     <main>
       <h1>ECDSA Demo</h1>
+      <div>
+        Message: <span id="payload"></span>
+      </div>
       <button id="keygen" hidden>Generate keys</button>
       <div id="progress">
         <label for="progress-bar" id="label">Generating keys...</label>

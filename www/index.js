@@ -1,6 +1,7 @@
 import Worker from 'worker-loader!./worker.js';
 
 const button = document.getElementById('keygen'),
+  payload = document.getElementById('payload'),
   progress = document.getElementById('progress'),
   label = document.getElementById('label'),
   data = document.getElementById('data'),
@@ -15,17 +16,31 @@ function hide(el) {
   el.style.display = 'none';
 }
 
+function randomMessage() {
+  return (Array.apply(null, Array(32))).map(() => {
+    return Math.floor(Math.random() * 256);
+  });
+}
+
+function hex(bytes) {
+  const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+  return bytes.reduce((acc, u8) => {
+    acc += chars[Math.floor(u8 / 16)] + chars[u8 % 16];
+    return acc
+  }, '');
+}
+
 let actionType = 'keygen';
 let actionData = {};
 // Message must be Vec<u8>, do not use Uint8Array as that
 // gets serialized to a JSON object.
-const messages = [[79, 77, 69, 82], [38, 22, 90, 212], [34, 56, 29, 32]];
-const message = messages[Math.floor(Math.random() * messages.length)];
+const message = randomMessage();
 
 if (window.Worker) {
   const worker = new Worker('worker.js');
   worker.onmessage = (e) => {
     if (e.data.type === 'ready') {
+      payload.innerText = hex(message);
       show(button);
       button.addEventListener('click', (_) => {
         show(progress);
