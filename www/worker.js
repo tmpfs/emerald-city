@@ -11,8 +11,18 @@ import('emerald-city')
         keys = wasm.keygen(threshold, parties);
         postMessage({type: 'keygen_done', keys});
       } else if (data.type === 'sign_message') {
-        const {message, threshold, parties} = data;
-        signed = wasm.sign_message(threshold, parties, keys, message);
+        console.log('original multi keys');
+        console.log(keys);
+        console.log(JSON.stringify(keys));
+        console.log('END original multi keys');
+        const {message, threshold, parties, signKeys} = data;
+
+        console.log('split multi keys');
+        console.log(signKeys);
+        console.log(JSON.stringify(signKeys));
+        console.log('END split multi keys');
+
+        signed = wasm.sign_message(threshold, parties, signKeys, message);
         postMessage({type: 'sign_message_done', signed});
       } else if (data.type === 'verify_signature') {
         const {parties} = data;

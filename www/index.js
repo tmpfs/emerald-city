@@ -50,47 +50,60 @@ function hex(bytes) {
   }, '');
 }
 
-function showPartyKeys(multiKey) {
-  show(partiesList);
-  const keys = multiKey[0];
-  const sharedKeys = multiKey[1];
-  const ge = multiKey[2];
-  const partyKeys = [];
-
-  for (let i = 0; i < parties;i++) {
-    partyKeys.push({
-      index: i,
-      key: keys[i],
-      sharedKey: keys[i],
-      ge: ge[i],
-    })
-  }
-
-  const tpl = document.getElementById('party-item');
-
-  for (const partyKey of partyKeys) {
-    const template = tpl.content.cloneNode(true);
-    const heading = template.querySelector('h3');
-    const button = template.querySelector('button');
-    heading.innerText = `Party ${partyKey.index + 1}`;
-    const pre = template.querySelector('details > pre');
-    pre.innerText = JSON.stringify(partyKey, undefined, 2);
-
-    button.addEventListener('click', (e) => {
-      signingKeys.push(partyKey);
-      if (signingKeys.length === threshold + 1) {
-        console.log('Got enough signing keys to proceed...');
-      }
-
-      e.currentTarget.setAttribute('disabled', '1');
-    });
-
-    partiesList.appendChild(template);
-  }
-}
-
 if (window.Worker) {
   const worker = new Worker('worker.js');
+
+  function showPartyKeys(multiKey) {
+    show(partiesList);
+    const keys = multiKey[0];
+    const sharedKeys = multiKey[1];
+    const ge = multiKey[2];
+    const partyKeys = [];
+
+    for (let i = 0; i < parties;i++) {
+      partyKeys.push({
+        index: i,
+        key: keys[i],
+        sharedKey: keys[i],
+        ge: ge[i],
+      })
+    }
+
+    const tpl = document.getElementById('party-item');
+
+    for (const partyKey of partyKeys) {
+      const template = tpl.content.cloneNode(true);
+      const heading = template.querySelector('h3');
+      const button = template.querySelector('button');
+      heading.innerText = `Party ${partyKey.index + 1}`;
+      const pre = template.querySelector('details > pre');
+      pre.innerText = JSON.stringify(partyKey, undefined, 2);
+
+      button.addEventListener('click', (e) => {
+        signingKeys.push(partyKey);
+        if (signingKeys.length === threshold + 1) {
+          console.log('Got enough signing keys to proceed...');
+        }
+
+        e.currentTarget.setAttribute('disabled', '1');
+
+        const signKeys = [
+          [partyKey.key],
+          [partyKey.sharedKey],
+          [partyKey.ge],
+          multiKey[3],
+          multiKey[4],
+        ];
+
+        const signData = {threshold, parties, message, signKeys};
+
+        worker.postMessage({type: 'sign_message', ...signData})
+      });
+
+      partiesList.appendChild(template);
+    }
+  }
+
   worker.onmessage = (e) => {
     if (e.data.type === 'ready') {
       payload.innerText = hex(message);
