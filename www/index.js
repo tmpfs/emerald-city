@@ -63,9 +63,6 @@ if (window.Worker) {
     for (let i = 0; i < parties;i++) {
       partyKeys.push({
         index: i,
-        key: keys[i],
-        sharedKey: keys[i],
-        ge: ge[i],
       })
     }
 
@@ -88,14 +85,14 @@ if (window.Worker) {
         e.currentTarget.setAttribute('disabled', '1');
 
         const signKeys = [
-          [partyKey.key],
-          [partyKey.sharedKey],
-          [partyKey.ge],
+          multiKey[0].filter((_, index) => index === partyKey.index),
+          multiKey[1].filter((_, index) => index === partyKey.index),
+          multiKey[2].filter((_, index) => index === partyKey.index),
           multiKey[3],
           multiKey[4],
         ];
 
-        const signData = {threshold, parties, message, signKeys};
+        const signData = {threshold, parties: 1, message, signKeys};
 
         worker.postMessage({type: 'sign_message', ...signData})
       });
