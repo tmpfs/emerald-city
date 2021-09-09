@@ -15,7 +15,7 @@ let actionType = 'keygen';
 let threshold = 1;
 let parties = 3;
 let actionData = { threshold, parties };
-let signingKeys = [];
+let signingIndices = [];
 // Message must be Vec<u8>, do not use Uint8Array as that
 // gets serialized to a JSON object.
 const message = randomMessage();
@@ -34,6 +34,7 @@ function randomMessage() {
   });
 }
 
+/*
 thresholdInput.addEventListener('change', (e) => {
   threshold = Math.min(parseInt(e.target.value), parties - 1);
 });
@@ -41,6 +42,7 @@ thresholdInput.addEventListener('change', (e) => {
 partiesInput.addEventListener('change', (e) => {
   parties = parseInt(e.target.value);
 });
+*/
 
 function hex(bytes) {
   const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
@@ -68,15 +70,21 @@ if (window.Worker) {
       const button = template.querySelector('button');
       heading.innerText = `Party ${i + 1}`;
 
-      const signData = {index: i, key: multiKey[0][i], sharedKey: multiKey[1][i], vssScheme: multiKey[4]};
-
+      const partyKeyData = {index: i, key: multiKey[0][i], sharedKey: multiKey[1][i], vssScheme: multiKey[4]};
       const pre = template.querySelector('details > pre');
-      pre.innerText = JSON.stringify(signData, undefined, 2);
+      pre.innerText = JSON.stringify(partyKeyData, undefined, 2);
 
       button.addEventListener('click', (e) => {
         e.currentTarget.setAttribute('disabled', '1');
-        // Generate a signing key for this party
-        worker.postMessage({type: 'generate_sign_key', ...signData})
+        signingIndices.push(i);
+        if (signingIndices.length === threshold + 1) {
+          console.log('Got enough signing keys to proceed...');
+          const signData = { threshold, parties, message, signingIndices, signKeys: multiKey };
+          worker.postMessage({type: 'sign_message', ...signData})
+          hide(partiesList);
+          label.innerText = "Signing message...";
+          show(progress);
+        }
       });
 
       partiesList.appendChild(template);
@@ -89,10 +97,7 @@ if (window.Worker) {
       show(button);
       button.addEventListener('click', (_) => {
         show(progress);
-        if (actionType === 'sign_message') {
-          hide(data);
-          label.innerText = 'Signing message...';
-        } else if (actionType === 'verify_signature') {
+        if (actionType === 'verify_signature') {
           hide(progress);
           hide(button);
           hide(data);
@@ -103,26 +108,11 @@ if (window.Worker) {
     } else if (e.data.type === 'keygen_done') {
       hide(progress);
       hide(button);
-
       showPartyKeys(e.data.keys);
-
-      // Prepare for next phase
-      //button.innerText = 'Sign message';
-      //actionType = 'sign_message';
-      //actionData = {...actionData, message};
-
-    } else if (e.data.type === 'generate_sign_key_done') {
-      const {index, signingKey} = e.data;
-      console.log("Adding signing key", signingKey);
-      signingKeys.push({index, signingKey});
-
-      if (signingKeys.length === threshold + 1) {
-        console.log('Got enough signing keys to proceed...');
-      }
-
     } else if (e.data.type === 'sign_message_done') {
       hide(progress);
 
+      show(button);
       show(data);
       data.querySelector('summary').innerText = "Signed data";
       json.innerText = JSON.stringify(e.data.signed, undefined, 2);
