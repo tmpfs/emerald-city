@@ -98,6 +98,26 @@ pub fn keygen(t: usize, n: usize) -> JsValue {
 }
 
 #[wasm_bindgen]
+pub fn generate_party_sign_key(
+    index: usize,
+    key: JsValue,
+    shared_key: JsValue,
+    vss_scheme: JsValue,
+) -> JsValue {
+    console_log!("WASM: generate party signing key...");
+    let key: Keys = key.into_serde().unwrap();
+    let shared_key: SharedKeys = shared_key.into_serde().unwrap();
+    let vss_scheme: VerifiableSS = vss_scheme.into_serde().unwrap();
+
+    // FIXME: `s` is hard-coded!
+    let s = vec![0, 1];
+
+    let result = generate_sign_key(index, key, shared_key, vss_scheme, s);
+    console_log!("WASM: party signing key generated.");
+    JsValue::from_serde(&result).unwrap()
+}
+
+#[wasm_bindgen]
 pub fn sign_message(t: usize, ttag: usize, keys: JsValue, message: JsValue) -> JsValue {
     console_log!("WASM: sign message...");
     let keys: MultiKey = keys.into_serde().unwrap();
@@ -212,10 +232,10 @@ pub fn keygen_t_n_parties(t: usize, n: usize) -> MultiKey {
 
 /// Generate a signing key for a single party.
 pub fn generate_sign_key(
+    index: usize,
     key: Keys,
     shared_key: SharedKeys,
     vss_scheme: VerifiableSS,
-    index: usize,
     s: Vec<usize>,
 ) -> SignKeys {
     let party_private = PartyPrivate::set_private(key, shared_key);

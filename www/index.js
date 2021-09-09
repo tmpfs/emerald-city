@@ -66,29 +66,17 @@ if (window.Worker) {
       const template = tpl.content.cloneNode(true);
       const heading = template.querySelector('h3');
       const button = template.querySelector('button');
-      heading.innerText = `Party ${partyKey.index + 1}`;
+      heading.innerText = `Party ${i + 1}`;
+
+      const signData = {index: i, key: multiKey[0][i], sharedKey: multiKey[1][i], vssScheme: multiKey[4]};
+
       const pre = template.querySelector('details > pre');
-      pre.innerText = JSON.stringify(partyKey, undefined, 2);
+      pre.innerText = JSON.stringify(signData, undefined, 2);
 
       button.addEventListener('click', (e) => {
-        signingKeys.push(partyKey);
-        if (signingKeys.length === threshold + 1) {
-          console.log('Got enough signing keys to proceed...');
-        }
-
         e.currentTarget.setAttribute('disabled', '1');
-
-        const signKeys = [
-          multiKey[0].filter((_, index) => index === i),
-          multiKey[1].filter((_, index) => index === i),
-          multiKey[2].filter((_, index) => index === i),
-          multiKey[3],
-          multiKey[4],
-        ];
-
-        const signData = {threshold, parties: 1, message, signKeys};
-
-        worker.postMessage({type: 'sign_message', ...signData})
+        // Generate a signing key for this party
+        worker.postMessage({type: 'generate_sign_key', ...signData})
       });
 
       partiesList.appendChild(template);
@@ -114,13 +102,23 @@ if (window.Worker) {
       });
     } else if (e.data.type === 'keygen_done') {
       hide(progress);
+      hide(button);
 
       showPartyKeys(e.data.keys);
 
       // Prepare for next phase
-      button.innerText = 'Sign message';
-      actionType = 'sign_message';
-      actionData = {...actionData, message};
+      //button.innerText = 'Sign message';
+      //actionType = 'sign_message';
+      //actionData = {...actionData, message};
+
+    } else if (e.data.type === 'generate_sign_key_done') {
+      const {index, signingKey} = e.data;
+      console.log("Adding signing key", signingKey);
+      signingKeys.push({index, signingKey});
+
+      if (signingKeys.length === threshold + 1) {
+        console.log('Got enough signing keys to proceed...');
+      }
 
     } else if (e.data.type === 'sign_message_done') {
       hide(progress);
