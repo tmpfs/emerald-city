@@ -228,7 +228,9 @@ pub fn sign(keys: MultiKey, t: usize, ttag: usize, s: Vec<usize>, message: Vec<u
     // create a vector of signing keys, one for each party.
     // throughout i will index parties
     let sign_keys_vec = (0..ttag)
-        .map(|i| SignKeys::create(&private_vec[s[i]], &vss_scheme, s[i], &s))
+        .map(|i| {
+            SignKeys::create(&private_vec[s[i]], &vss_scheme, s[i], &s)
+        })
         .collect::<Vec<SignKeys>>();
 
     // each party computes [Ci,Di] = com(g^gamma_i) and broadcast the commitments
