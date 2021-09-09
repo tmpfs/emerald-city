@@ -60,15 +60,9 @@ if (window.Worker) {
     const ge = multiKey[2];
     const partyKeys = [];
 
-    for (let i = 0; i < parties;i++) {
-      partyKeys.push({
-        index: i,
-      })
-    }
-
     const tpl = document.getElementById('party-item');
 
-    for (const partyKey of partyKeys) {
+    for (let i = 0; i < parties;i++) {
       const template = tpl.content.cloneNode(true);
       const heading = template.querySelector('h3');
       const button = template.querySelector('button');
@@ -85,9 +79,9 @@ if (window.Worker) {
         e.currentTarget.setAttribute('disabled', '1');
 
         const signKeys = [
-          multiKey[0].filter((_, index) => index === partyKey.index),
-          multiKey[1].filter((_, index) => index === partyKey.index),
-          multiKey[2].filter((_, index) => index === partyKey.index),
+          multiKey[0].filter((_, index) => index === i),
+          multiKey[1].filter((_, index) => index === i),
+          multiKey[2].filter((_, index) => index === i),
           multiKey[3],
           multiKey[4],
         ];

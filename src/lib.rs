@@ -83,7 +83,6 @@ macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
 
-
 #[wasm_bindgen(start)]
 pub fn start() {
     console_error_panic_hook::set_once();
@@ -104,7 +103,7 @@ pub fn sign_message(t: usize, ttag: usize, keys: JsValue, message: JsValue) -> J
     let keys: MultiKey = keys.into_serde().unwrap();
     let message: Vec<u8> = message.into_serde().unwrap();
     // FIXME: `s` is hard-coded for t=2, n=3
-    let sign_output = sign(keys, t, ttag, vec![0, 1 ,2], message);
+    let sign_output = sign(keys, t, ttag, vec![0, 1, 2], message);
     console_log!("WASM: message signing complete.");
     JsValue::from_serde(&sign_output).unwrap()
 }
@@ -117,10 +116,7 @@ pub fn verify_signature(ttag: usize, sign_output: JsValue) {
     console_log!("WASM: signature verification complete.");
 }
 
-pub fn keygen_t_n_parties(
-    t: usize,
-    n: usize,
-) -> MultiKey {
+pub fn keygen_t_n_parties(t: usize, n: usize) -> MultiKey {
     let parames = Parameters {
         threshold: t,
         share_count: n.clone(),
@@ -212,6 +208,18 @@ pub fn keygen_t_n_parties(
         y_sum,
         vss_scheme_for_test[0].clone(),
     )
+}
+
+/// Generate a signing key for a single party.
+pub fn generate_sign_key(
+    key: Keys,
+    shared_key: SharedKeys,
+    vss_scheme: VerifiableSS,
+    index: usize,
+    s: Vec<usize>,
+) -> SignKeys {
+    let party_private = PartyPrivate::set_private(key, shared_key);
+    SignKeys::create(&party_private, &vss_scheme, index, &s)
 }
 
 #[allow(dead_code)]
@@ -382,11 +390,17 @@ pub fn sign(keys: MultiKey, t: usize, ttag: usize, s: Vec<usize>, message: Vec<u
         local_sig_vec.push(local_sig);
     }
 
-    SignOutput {local_sig_vec, r_vec}
+    SignOutput {
+        local_sig_vec,
+        r_vec,
+    }
 }
 
 pub fn verify(ttag: usize, sign_output: SignOutput) {
-    let SignOutput{local_sig_vec, r_vec} = sign_output;
+    let SignOutput {
+        local_sig_vec,
+        r_vec,
+    } = sign_output;
 
     let mut phase5_com_vec: Vec<Phase5Com1> = Vec::new();
     let mut phase_5a_decom_vec: Vec<Phase5ADecom1> = Vec::new();
